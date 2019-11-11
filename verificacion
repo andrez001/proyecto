@@ -1,0 +1,363 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Controladores;
+
+
+namespace Vista
+{
+    public partial class FrmArticulo : Form
+    {
+
+        private bool IsNuevo = false;
+        private bool IsEditar = false;
+        private static FrmArticulo _Instancia;
+        public static FrmArticulo GetInstancia()
+        {
+            if (_Instancia == null)
+            {
+                _Instancia = new FrmArticulo();
+
+            }
+            return _Instancia;
+        }
+        public void setCategoria (string idcategoria, string nombre)
+        {
+            this.txtIdcategoria.Text = idcategoria;
+            this.txtCategoria.Text = nombre;
+
+        }
+
+
+        public FrmArticulo()
+        {
+            InitializeComponent();
+            this.ttMensaje.SetToolTip(this.txtNombre, "Ingrese el Nombre del Articulo");
+            
+            this.ttMensaje.SetToolTip(this.txtCategoria, "Seleccione la categoria del articulo");
+            this.ttMensaje.SetToolTip(this.cbIdpresentacion, "Slecciones la Presentacion del articulo");
+
+            this.txtIdarticulo.Visible = false;
+            this.txtCategoria.ReadOnly = true;
+            this.LlenarComboPresentacion();
+
+        }
+
+        private void MensajeOk(string mensaje)
+        {
+            MessageBox.Show(mensaje, "Sistema de Ventas", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        }
+
+        private void MensajError(string mensaje)
+        {
+            MessageBox.Show(mensaje, "Sistema de Ventas", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+        }
+
+        private void Limpiar()
+        {
+            this.txtCodigo.Text = string.Empty;
+            this.txtNombre.Text = string.Empty;
+            this.txtDescripcion.Text = string.Empty;
+            this.txtIdcategoria.Text = string.Empty;
+            this.txtCategoria.Text = string.Empty;
+            this.txtIdarticulo.Text = string.Empty;
+            
+
+        }
+
+        private void Habilitar(bool valor)
+        {
+            this.txtCodigo.ReadOnly = !valor;
+            this.txtNombre.ReadOnly = !valor;
+            this.txtDescripcion.ReadOnly = !valor;
+            this.btnBuscarCategoria.Enabled = valor;
+            this.cbIdpresentacion.Enabled = valor;
+            
+            this.txtIdarticulo.ReadOnly = !valor;
+
+        }
+
+        private void Botones()
+        {
+            if (this.IsNuevo || this.IsEditar)
+            {
+                this.Habilitar(true);
+                this.btnNuevo.Enabled = false;
+                this.btnGuardar.Enabled = true;
+                this.btnEditar.Enabled = false;
+                this.btnCancelar.Enabled = true;
+            }
+            else
+            {
+                this.Habilitar(false);
+                this.btnNuevo.Enabled = true;
+                this.btnGuardar.Enabled = false;
+                this.btnEditar.Enabled = true;
+                this.btnCancelar.Enabled = false;
+            }
+        }
+
+        private void OcultarColumnas()
+        {
+
+            this.dataListado.Columns[0].Visible = false;
+            this.dataListado.Columns[1].Visible = false;
+            this.dataListado.Columns[5].Visible = false;
+            this.dataListado.Columns[7].Visible = false;
+        }
+
+        private void Mostrar()
+        {
+            this.dataListado.DataSource = NArticulo.Mostrar();
+            this.OcultarColumnas();
+            lblTotal.Text = "Total de Registros:" + Convert.ToString(dataListado.Rows.Count);
+
+        }
+
+        private void BuscarNombre()
+        {
+            this.dataListado.DataSource = NArticulo.BuscarNombre(this.txtBuscar.Text);
+            this.OcultarColumnas();
+            lblTotal.Text = "Total de Registros:" + Convert.ToString(dataListado.Rows.Count);
+        }
+
+        private void LlenarComboPresentacion()
+        {
+            cbIdpresentacion.DataSource = NPresentacion.Mostrar();
+            cbIdpresentacion.ValueMember = "idpresentacion";
+            cbIdpresentacion.DisplayMember = "nombre_presentacion";
+
+        }
+
+
+
+
+        private void FrmArticulo_Load(object sender, EventArgs e)
+        {
+            this.Top = 0;
+            this.Left = 0;
+            this.Mostrar();
+            this.Habilitar(false);
+            this.Botones();
+        }
+
+        
+
+   
+
+        private void BtnBuscar_Click(object sender, EventArgs e)
+        {
+            this.BuscarNombre();
+        }
+
+        private void TxtBuscar_TextChanged(object sender, EventArgs e)
+        {
+            this.BuscarNombre();
+        }
+
+        private void BtnNuevo_Click(object sender, EventArgs e)
+        {
+            this.IsNuevo = true;
+            this.IsEditar = false;
+            this.Botones();
+            this.Limpiar();
+            this.Habilitar(true);
+            this.txtNombre.Focus();
+        }
+
+        private void BtnGuardar_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string rpta = "";
+                if (this.txtNombre.Text == string.Empty || this.txtIdcategoria.Text == string.Empty || this.txtCodigo.Text == string.Empty)
+                {
+                    MensajError("Falta ingresar algunos datos, seran remarcados");
+                    errorIcono.SetError(txtNombre, "Ingrese un Valor");
+                    errorIcono.SetError(txtCodigo, "Ingrese un Valor");
+                    errorIcono.SetError(txtCategoria, "Ingrese un Valor");
+
+                }
+                else
+                {
+                    
+
+                    if (this.IsNuevo)
+                    {
+                        rpta = NArticulo.Insertar(this.txtCodigo.Text, this.txtNombre.Text.Trim().ToUpper(),
+                            this.txtDescripcion.Text.Trim(), Convert.ToInt32(this.txtIdcategoria.Text),
+                            Convert.ToInt32(this.cbIdpresentacion.SelectedValue));
+
+                    }
+                    else
+                    {
+                        rpta = NArticulo.Editar(Convert.ToInt32(this.txtIdarticulo.Text),
+                              this.txtCodigo.Text, this.txtNombre.Text.Trim().ToUpper(),
+                            this.txtDescripcion.Text.Trim(),  Convert.ToInt32(this.txtIdcategoria.Text),
+                            Convert.ToInt32(this.cbIdpresentacion.SelectedValue));
+
+                    }
+                    if (rpta.Equals("OK"))
+                    {
+                        if (this.IsNuevo)
+                        {
+                            this.MensajeOk("Se Inserto de forma correcta el registro");
+
+                        }
+                        else
+                        {
+                            this.MensajeOk("Se Actualizo de forma correcta");
+
+                        }
+                    }
+                    else
+                    {
+                        this.MensajError(rpta);
+                    }
+                    this.IsNuevo = false;
+                    this.IsEditar = false;
+                    this.Botones();
+                    this.Limpiar();
+                    this.Mostrar();
+
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + ex.StackTrace);
+            }
+        }
+
+        private void BtnEditar_Click(object sender, EventArgs e)
+        {
+            if (!this.txtIdarticulo.Text.Equals(""))
+            {
+                this.IsEditar = true;
+                this.Botones();
+                this.Habilitar(true);
+
+            }
+            else
+            {
+                this.MensajError("Debe de seleccionar primero el registro a modificar");
+
+            }
+        }
+
+        private void BtnCancelar_Click(object sender, EventArgs e)
+        {
+            {
+                this.IsNuevo = false;
+                this.IsEditar = false;
+                this.Botones();
+                this.Limpiar();
+            }
+        }
+
+        private void DataListado_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex == dataListado.Columns["Eliminar"].Index)
+            {
+                DataGridViewCheckBoxCell ChkEliminar = (DataGridViewCheckBoxCell)dataListado.Rows[e.RowIndex].Cells["Eliminar"];
+                ChkEliminar.Value = !Convert.ToBoolean(ChkEliminar.Value);
+
+            }
+        }
+
+        private void DataListado_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            this.txtIdarticulo.Text = Convert.ToString(this.dataListado.CurrentRow.Cells["idarticulo"].Value);
+            this.txtCodigo.Text = Convert.ToString(this.dataListado.CurrentRow.Cells["codigo"].Value);
+            this.txtNombre.Text = Convert.ToString(this.dataListado.CurrentRow.Cells["nombre"].Value);
+            this.txtDescripcion.Text = Convert.ToString(this.dataListado.CurrentRow.Cells["descripcion"].Value);
+            
+            
+            this.txtIdcategoria.Text = Convert.ToString(this.dataListado.CurrentRow.Cells["idcategoria"].Value);
+            this.txtCategoria.Text = Convert.ToString(this.dataListado.CurrentRow.Cells["categoria"].Value);
+            this.cbIdpresentacion.SelectedValue = Convert.ToString(this.dataListado.CurrentRow.Cells["idpresentacion"].Value);
+
+
+            this.tabControl1.SelectedIndex = 1;
+        }
+
+        private void ChkEliminar_CheckedChanged(object sender, EventArgs e)
+        {
+            if (chkEliminar.Checked)
+            {
+                this.dataListado.Columns[0].Visible = true;
+
+            }
+            else
+            {
+                this.dataListado.Columns[0].Visible = false;
+            }
+        }
+
+        private void BtnEliminar_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                DialogResult Opcion;
+                Opcion = MessageBox.Show("Realmente desea eliminar los registros", "Sistemas de ventas", MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+
+                if (Opcion == DialogResult.OK)
+                {
+                    string Codigo;
+                    string Rpta = "";
+
+                    foreach (DataGridViewRow row in dataListado.Rows)
+                    {
+                        if (Convert.ToBoolean(row.Cells[0].Value))
+                        {
+                            Codigo = Convert.ToString(row.Cells[1].Value);
+                            Rpta = Controladores.NArticulo.Eliminar(Convert.ToInt32(Codigo));
+
+
+                            if (Rpta.Equals("OK"))
+                            {
+                                this.MensajeOk("Se Elimino correctamente el registro");
+
+                            }
+                            else
+                            {
+                                this.MensajError(Rpta);
+                            }
+                        }
+                    }
+                    this.Mostrar();
+
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message + ex.StackTrace);
+            }
+        }
+
+        private void BtnBuscarCategoria_Click(object sender, EventArgs e)
+        {
+            frmVistaCategoria_Articulo form = new frmVistaCategoria_Articulo();
+            form.ShowDialog();
+
+        }
+
+        private void CbIdpresentacion_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void PxImagen_Click(object sender, EventArgs e)
+        {
+
+        }
+    }
+}
+    
